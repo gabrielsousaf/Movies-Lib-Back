@@ -1,0 +1,51 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum MediaType {
+  MOVIE
+  TV
+}
+
+model User {
+  id           String      @id @default(uuid())
+  username     String      @unique
+  email        String      @unique
+  passwordHash String
+  displayName  String?
+  avatarUrl    String?
+  bio          String?
+  isPublic     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  favorites    Favorite[]
+
+  @@map("users")
+}
+
+model Favorite {
+  id            String    @id @default(uuid())
+  userId        String
+  tmdbId        Int
+  mediaType     MediaType
+  title         String
+  posterPath    String?
+  backdropPath  String?
+  voteAverage   Float?
+  releaseDate   String?
+  createdAt     DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tmdbId, mediaType])
+  @@index([userId])
+  @@map("favorites")
+}
