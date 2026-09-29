@@ -17,30 +17,6 @@ API REST completa e escalável para a plataforma **Movies-Lib**, construída com
 
 ---
 
-## ⚙️ Variáveis de Ambiente
-
-Crie um arquivo `.env` na raiz do projeto com base no [.env.example](file:///.env.example):
-
-```env
-# Banco de Dados PostgreSQL (Supabase / Neon)
-DATABASE_URL="postgresql://postgres.[REF]:[SENHA]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres.[REF]:[SENHA]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres"
-
-# Autenticação JWT
-JWT_SECRET="sua_chave_super_secreta_jwt_movies_lib"
-JWT_EXPIRES_IN="7d"
-
-# Porta do Servidor
-PORT=3333
-
-# The Movie Database (TMDB) API
-TMDB_API_KEY="seu_tmdb_api_key_v3"
-TMDB_BASE_URL="https://api.themoviedb.org/3"
-TMDB_IMAGE_BASE_URL="https://image.tmdb.org/t/p"
-```
-
----
-
 ## 🚀 Como Executar
 
 ### 1. Instalar dependências:
