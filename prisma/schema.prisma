@@ -4,7 +4,6 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,6 +11,11 @@ generator client {
 enum MediaType {
   MOVIE
   TV
+}
+
+enum WatchStatus {
+  WATCHLIST // Quero Assistir
+  WATCHED   // Já Assisti
 }
 
 model User {
@@ -27,6 +31,8 @@ model User {
   updatedAt    DateTime    @updatedAt
 
   favorites    Favorite[]
+  watchlist    WatchlistItem[]
+  reviews      Review[]
 
   @@map("users")
 }
@@ -48,4 +54,45 @@ model Favorite {
   @@unique([userId, tmdbId, mediaType])
   @@index([userId])
   @@map("favorites")
+}
+
+model WatchlistItem {
+  id            String       @id @default(uuid())
+  userId        String
+  tmdbId        Int
+  mediaType     MediaType
+  title         String
+  posterPath    String?
+  backdropPath  String?
+  voteAverage   Float?
+  releaseDate   String?
+  status        WatchStatus  @default(WATCHLIST)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tmdbId, mediaType])
+  @@index([userId, status])
+  @@map("watchlist")
+}
+
+model Review {
+  id            String     @id @default(uuid())
+  userId        String
+  tmdbId        Int
+  mediaType     MediaType
+  title         String
+  posterPath    String?
+  rating        Float      // Nota de 1 a 10
+  content       String?    // Resenha ou comentário
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tmdbId, mediaType])
+  @@index([tmdbId, mediaType])
+  @@index([userId])
+  @@map("reviews")
 }

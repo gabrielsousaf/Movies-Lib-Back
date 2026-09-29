@@ -2,9 +2,12 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 
 @Injectable()
 export class UsersService {
@@ -22,7 +25,7 @@ export class UsersService {
         isPublic: true,
         createdAt: true,
         _count: {
-          select: { favorites: true },
+          select: { favorites: true, watchlist: true, reviews: true },
         },
       },
     });
@@ -34,6 +37,8 @@ export class UsersService {
     return {
       ...user,
       totalFavorites: user._count.favorites,
+      totalWatchlist: user._count.watchlist,
+      totalReviews: user._count.reviews,
     };
   }
 
@@ -77,5 +82,48 @@ export class UsersService {
         updatedAt: true,
       },
     });
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado.');
+    }
+
+    const isMatch = await bcrypt.compare(dto.oldPassword, user.passwordHash);
+    if (!isMatch) {
+      throw new UnauthorizedException('A senha atual fornecida está incorreta.');
+    }
+
+    const saltRounds = 10;
+    const newPasswordHash = await bcrypt.hash(dto.newPassword, saltRounds);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    return { message: 'Senha alterada com sucesso!' };
+  }
+
+  async deleteAccount(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado.');
+    }
+
+    await this.prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return { message: 'Conta de usuário e dados associados excluídos com sucesso.' };
   }
 }

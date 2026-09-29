@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseEnumPipe,
   ParseIntPipe,
   Post,
   Query,
@@ -47,19 +48,23 @@ export class FavoritesController {
   async removeFavorite(
     @CurrentUser('id') userId: string,
     @Param('tmdbId', ParseIntPipe) tmdbId: number,
-    @Query('type') type: MediaTypeDto,
+    @Query('type', new ParseEnumPipe(MediaTypeDto)) type: MediaTypeDto,
   ) {
     return this.favoritesService.removeFavorite(userId, tmdbId, type);
   }
 
   @Get('me')
-  @ApiOperation({ summary: 'Listar todos os favoritos do usuário logado' })
+  @ApiOperation({ summary: 'Listar todos os favoritos do usuário logado (com paginação opcional)' })
   @ApiQuery({ name: 'type', enum: MediaTypeDto, required: false, description: 'Filtrar por MOVIE ou TV' })
+  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Número da página' })
+  @ApiQuery({ name: 'limit', required: false, example: 20, description: 'Itens por página' })
   async getMyFavorites(
     @CurrentUser('id') userId: string,
-    @Query('type') type?: MediaTypeDto,
+    @Query('type', new ParseEnumPipe(MediaTypeDto, { optional: true })) type?: MediaTypeDto,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ) {
-    return this.favoritesService.getMyFavorites(userId, type);
+    return this.favoritesService.getMyFavorites(userId, type, page, limit);
   }
 
   @Get('check/:tmdbId')
@@ -68,7 +73,7 @@ export class FavoritesController {
   async checkFavorite(
     @CurrentUser('id') userId: string,
     @Param('tmdbId', ParseIntPipe) tmdbId: number,
-    @Query('type') type: MediaTypeDto,
+    @Query('type', new ParseEnumPipe(MediaTypeDto)) type: MediaTypeDto,
   ) {
     return this.favoritesService.checkIsFavorite(userId, tmdbId, type);
   }

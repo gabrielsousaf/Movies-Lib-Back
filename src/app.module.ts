@@ -4,6 +4,8 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { FavoritesModule } from './favorites/favorites.module.js';
+import { WatchlistModule } from './watchlist/watchlist.module.js';
+import { ReviewsModule } from './reviews/reviews.module.js';
 import { TmdbModule } from './tmdb/tmdb.module.js';
 
 @Module({
@@ -15,6 +17,8 @@ import { TmdbModule } from './tmdb/tmdb.module.js';
     AuthModule,
     UsersModule,
     FavoritesModule,
+    WatchlistModule,
+    ReviewsModule,
     TmdbModule,
   ],
 })

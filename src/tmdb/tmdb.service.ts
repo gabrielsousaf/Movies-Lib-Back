@@ -72,7 +72,7 @@ export class TmdbService {
     try {
       const response = await this.client.get(`/movie/${id}`, {
         params: {
-          append_to_response: 'credits,recommendations,videos',
+          append_to_response: 'credits,recommendations,videos,watch/providers',
         },
       });
       return response.data;
@@ -86,11 +86,32 @@ export class TmdbService {
       const response = await this.client.get(`/movie/${id}/videos`);
       const videos = response.data?.results || [];
 
-      // Procura primeiro por Trailer dublado/legendado no YouTube
-      const trailer =
+      // Procura primeiro por Trailer dublado/legendado em pt-BR no YouTube
+      let trailer =
         videos.find(
-          (v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'),
-        ) || videos[0];
+          (v: any) => v.site === 'YouTube' && v.type === 'Trailer',
+        ) ||
+        videos.find(
+          (v: any) => v.site === 'YouTube' && v.type === 'Teaser',
+        );
+
+      // Fallback: se não encontrou em pt-BR, busca trailers em en-US
+      if (!trailer) {
+        const fallbackResponse = await this.client.get(`/movie/${id}/videos`, {
+          params: { language: 'en-US' },
+        });
+        const fallbackVideos = fallbackResponse.data?.results || [];
+
+        trailer =
+          fallbackVideos.find(
+            (v: any) => v.site === 'YouTube' && v.type === 'Trailer',
+          ) ||
+          fallbackVideos.find(
+            (v: any) => v.site === 'YouTube' && v.type === 'Teaser',
+          ) ||
+          fallbackVideos.find((v: any) => v.site === 'YouTube') ||
+          videos[0];
+      }
 
       if (!trailer) {
         return { hasTrailer: false, message: 'Nenhum trailer encontrado para este filme.' };
@@ -104,6 +125,24 @@ export class TmdbService {
         type: trailer.type,
         url: `https://www.youtube.com/watch?v=${trailer.key}`,
         embedUrl: `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1`,
+      };
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async getMovieWatchProviders(id: number) {
+    try {
+      const response = await this.client.get(`/movie/${id}/watch/providers`);
+      const results = response.data?.results || {};
+      const br = results['BR'] || null;
+
+      return {
+        id,
+        country: 'BR',
+        hasProviders: !!br,
+        providers: br,
+        allCountries: results,
       };
     } catch (error) {
       this.handleError(error);
@@ -143,7 +182,7 @@ export class TmdbService {
     try {
       const response = await this.client.get(`/tv/${id}`, {
         params: {
-          append_to_response: 'credits,recommendations,videos',
+          append_to_response: 'credits,recommendations,videos,watch/providers',
         },
       });
       return response.data;
@@ -166,10 +205,32 @@ export class TmdbService {
       const response = await this.client.get(`/tv/${id}/videos`);
       const videos = response.data?.results || [];
 
-      const trailer =
+      // Procura primeiro por Trailer dublado/legendado em pt-BR no YouTube
+      let trailer =
         videos.find(
-          (v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'),
-        ) || videos[0];
+          (v: any) => v.site === 'YouTube' && v.type === 'Trailer',
+        ) ||
+        videos.find(
+          (v: any) => v.site === 'YouTube' && v.type === 'Teaser',
+        );
+
+      // Fallback: se não encontrou em pt-BR, busca trailers em en-US
+      if (!trailer) {
+        const fallbackResponse = await this.client.get(`/tv/${id}/videos`, {
+          params: { language: 'en-US' },
+        });
+        const fallbackVideos = fallbackResponse.data?.results || [];
+
+        trailer =
+          fallbackVideos.find(
+            (v: any) => v.site === 'YouTube' && v.type === 'Trailer',
+          ) ||
+          fallbackVideos.find(
+            (v: any) => v.site === 'YouTube' && v.type === 'Teaser',
+          ) ||
+          fallbackVideos.find((v: any) => v.site === 'YouTube') ||
+          videos[0];
+      }
 
       if (!trailer) {
         return { hasTrailer: false, message: 'Nenhum trailer encontrado para esta série.' };
@@ -183,6 +244,24 @@ export class TmdbService {
         type: trailer.type,
         url: `https://www.youtube.com/watch?v=${trailer.key}`,
         embedUrl: `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1`,
+      };
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async getSeriesWatchProviders(id: number) {
+    try {
+      const response = await this.client.get(`/tv/${id}/watch/providers`);
+      const results = response.data?.results || {};
+      const br = results['BR'] || null;
+
+      return {
+        id,
+        country: 'BR',
+        hasProviders: !!br,
+        providers: br,
+        allCountries: results,
       };
     } catch (error) {
       this.handleError(error);
@@ -214,6 +293,100 @@ export class TmdbService {
   async getSeriesGenres() {
     try {
       const response = await this.client.get('/genre/tv/list');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  // ================= FILMES EM BREVE (UPCOMING) =================
+
+  async getUpcomingMovies(page = 1) {
+    try {
+      const response = await this.client.get('/movie/upcoming', { params: { page } });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  // ================= DESCOBERTA & FILTROS (DISCOVER) =================
+
+  async discoverMovies(params: {
+    with_genres?: string;
+    sort_by?: string;
+    page?: number;
+    year?: number;
+    min_vote?: number;
+  }) {
+    try {
+      const response = await this.client.get('/discover/movie', {
+        params: {
+          with_genres: params.with_genres,
+          sort_by: params.sort_by || 'popularity.desc',
+          page: params.page || 1,
+          primary_release_year: params.year,
+          'vote_average.gte': params.min_vote,
+          'vote_count.gte': params.min_vote ? 100 : undefined,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async discoverSeries(params: {
+    with_genres?: string;
+    sort_by?: string;
+    page?: number;
+    first_air_date_year?: number;
+    min_vote?: number;
+  }) {
+    try {
+      const response = await this.client.get('/discover/tv', {
+        params: {
+          with_genres: params.with_genres,
+          sort_by: params.sort_by || 'popularity.desc',
+          page: params.page || 1,
+          first_air_date_year: params.first_air_date_year,
+          'vote_average.gte': params.min_vote,
+          'vote_count.gte': params.min_vote ? 50 : undefined,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  // ================= ELENCO & ATORES (PERSON / CREDITS) =================
+
+  async getPersonDetails(id: number) {
+    try {
+      const response = await this.client.get(`/person/${id}`, {
+        params: {
+          append_to_response: 'combined_credits,images',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async getMovieCredits(id: number) {
+    try {
+      const response = await this.client.get(`/movie/${id}/credits`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async getSeriesCredits(id: number) {
+    try {
+      const response = await this.client.get(`/tv/${id}/credits`);
       return response.data;
     } catch (error) {
       this.handleError(error);

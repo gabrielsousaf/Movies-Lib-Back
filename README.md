@@ -1,114 +1,152 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🎬 Movies-Lib API (Backend REST)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST completa e escalável para a plataforma **Movies-Lib**, construída com **NestJS**, **TypeScript**, **Prisma ORM**, **PostgreSQL** em nuvem e documentação interativa com **Swagger**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🛠️ Tecnologias e Bibliotecas
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Framework:** [NestJS 12](https://nestjs.com/)
+- **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
+- **ORM & Banco:** [Prisma ORM](https://www.prisma.io/) com **PostgreSQL** gerenciado em nuvem (Supabase / Neon)
+- **Autenticação:** [Passport](http://www.passportjs.org/) + JWT (`@nestjs/jwt`, `passport-jwt`) com criptografia `bcrypt`
+- **Validação:** `class-validator` e `class-transformer` com `ValidationPipe` global
+- **Documentação de Rotas:** [Swagger / OpenAPI](https://swagger.io/) em `/api/docs`
+- **Catálogo Externo:** Integração completa com a API do [The Movie Database (TMDB)](https://www.themoviedb.org/)
+- **Testes & Qualidade:** [Vitest](https://vitest.dev/) para testes unitários e [Oxlint](https://oxc.rs/) para linting ultrarrápido
 
-## Project setup
+---
 
-```bash
-$ npm install
+## ⚙️ Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto com base no [.env.example](file:///.env.example):
+
+```env
+# Banco de Dados PostgreSQL (Supabase / Neon)
+DATABASE_URL="postgresql://postgres.[REF]:[SENHA]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.[REF]:[SENHA]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres"
+
+# Autenticação JWT
+JWT_SECRET="sua_chave_super_secreta_jwt_movies_lib"
+JWT_EXPIRES_IN="7d"
+
+# Porta do Servidor
+PORT=3333
+
+# The Movie Database (TMDB) API
+TMDB_API_KEY="seu_tmdb_api_key_v3"
+TMDB_BASE_URL="https://api.themoviedb.org/3"
+TMDB_IMAGE_BASE_URL="https://image.tmdb.org/t/p"
 ```
 
-## Compile and run the project
+---
 
+## 🚀 Como Executar
+
+### 1. Instalar dependências:
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
-
+### 2. Sincronizar o Banco com o Prisma:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npx prisma db push
+# ou executar migrações:
+npx prisma migrate dev
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### 3. Rodar em modo de desenvolvimento:
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+A API estará disponível em: `http://localhost:3333`  
+Documentação interativa Swagger: `http://localhost:3333/api/docs`
 
-## Observability
+### 4. Rodar testes e linter:
+```bash
+# Executar testes unitários
+npm run test
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+# Executar linter
+npm run lint
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+# Compilar para produção
+npm run build
+```
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+---
 
-## Resources
+## 📚 Endpoints da API
 
-Check out a few resources that may come in handy when working with NestJS:
+### 🔐 Autenticação (`/auth`)
+| Método | Rota | Proteção | Descrição |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/auth/register` | Pública | Cadastra usuário com validações e hash `bcrypt` |
+| `POST` | `/auth/login` | Pública | Autentica e devolve o Token JWT e dados do perfil |
+| `GET` | `/auth/me` | JWT | Retorna o perfil do usuário atualmente autenticado |
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 👤 Usuários & Perfis (`/users`)
+| Método | Rota | Proteção | Descrição |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/users/:username` | Pública | Perfil público e contagem de favoritos, watchlist e reviews |
+| `GET` | `/users/:username/favorites` | Opcional | Lista favoritos do usuário (se público ou se for o próprio dono) |
+| `PATCH` | `/users/me` | JWT | Atualiza dados cadastrais, bio, avatar e visibilidade (`isPublic`) |
+| `PATCH` | `/users/me/password` | JWT | Altera a senha do usuário autenticado |
+| `DELETE` | `/users/me` | JWT | Exclui definitivamente a conta e todos os dados associados em cascata |
 
-## Support
+### ❤️ Favoritos (`/favorites`)
+| Método | Rota | Proteção | Descrição |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/favorites` | JWT | Adiciona título aos favoritos |
+| `DELETE` | `/favorites/:tmdbId?type=MOVIE` | JWT | Remove título dos favoritos |
+| `GET` | `/favorites/me?type=MOVIE&page=1&limit=20` | JWT | Lista favoritos do usuário logado (com paginação) |
+| `GET` | `/favorites/check/:tmdbId?type=MOVIE` | JWT | Informa se o título já está favoritado (`{ isFavorite: boolean }`) |
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### 📌 Watchlist: Quero Assistir & Já Assisti (`/watchlist`)
+| Método | Rota | Proteção | Descrição |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/watchlist` | JWT | Salva ou atualiza item como `WATCHLIST` (Quero Assistir) ou `WATCHED` (Já Assisti) |
+| `PATCH` | `/watchlist/:tmdbId/status?type=MOVIE` | JWT | Altera o status entre `WATCHLIST` e `WATCHED` |
+| `DELETE` | `/watchlist/:tmdbId?type=MOVIE` | JWT | Remove item da watchlist |
+| `GET` | `/watchlist/me?status=WATCHLIST&type=MOVIE&page=1&limit=20` | JWT | Lista meus itens por status com paginação |
+| `GET` | `/watchlist/check/:tmdbId?type=MOVIE` | JWT | Verifica status atual (`{ inList: boolean, status: string }`) |
+| `GET` | `/watchlist/user/:username` | Opcional | Visualiza watchlist de outro usuário (se perfil for público) |
 
-## Stay in touch
+### ⭐ Avaliações & Reviews (`/reviews`)
+| Método | Rota | Proteção | Descrição |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/reviews` | JWT | Registra ou atualiza nota (0.5 a 10) e resenha |
+| `PATCH` | `/reviews/:id` | JWT | Edita nota ou comentário de uma avaliação |
+| `DELETE` | `/reviews/:id` | JWT | Exclui uma avaliação |
+| `GET` | `/reviews/media/:tmdbId?type=MOVIE&page=1&limit=10` | Pública | Avaliações da comunidade, nota média agregada e total |
+| `GET` | `/reviews/me?page=1&limit=20` | JWT | Minhas avaliações |
+| `GET` | `/reviews/me/media/:tmdbId?type=MOVIE` | JWT | Minha nota/avaliação específica para um título |
+| `GET` | `/reviews/user/:username` | Opcional | Lista avaliações feitas por outro usuário |
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### 🎬 Catálogo TMDB (`/tmdb`)
+| Método | Rota | Descrição |
+| :--- | :--- | :--- |
+| `GET` | `/tmdb/movies/popular` | Filmes populares |
+| `GET` | `/tmdb/movies/top-rated` | Filmes mais bem avaliados |
+| `GET` | `/tmdb/movies/now-playing` | Filmes atualmente em cartaz nos cinemas |
+| `GET` | `/tmdb/movies/upcoming` | Filmes que estreiam em breve nos cinemas |
+| `GET` | `/tmdb/movies/trending?timeWindow=day` | Filmes em alta no dia ou semana |
+| `GET` | `/tmdb/movies/discover` | Descobrir filmes por gêneros, ano, nota mínima e ordenação |
+| `GET` | `/tmdb/movies/:id` | Detalhes completos do filme, elenco, trailer e onde assistir |
+| `GET` | `/tmdb/movies/:id/trailer` | Trailer oficial HD do YouTube (com fallback internacional) |
+| `GET` | `/tmdb/movies/:id/providers` | Plataformas oficiais onde assistir no Brasil (JustWatch) |
+| `GET` | `/tmdb/movies/:id/credits` | Elenco e equipe técnica completa do filme |
+| `GET` | `/tmdb/series/popular` | Séries populares |
+| `GET` | `/tmdb/series/top-rated` | Séries mais bem avaliadas |
+| `GET` | `/tmdb/series/trending?timeWindow=day` | Séries em alta no dia ou semana |
+| `GET` | `/tmdb/series/discover` | Descobrir séries por gêneros, ano, nota mínima e ordenação |
+| `GET` | `/tmdb/series/:id` | Detalhes completos da série e lista de temporadas |
+| `GET` | `/tmdb/series/:id/season/:seasonNumber` | Episódios detalhados de uma temporada |
+| `GET` | `/tmdb/series/:id/trailer` | Trailer oficial HD do YouTube (com fallback internacional) |
+| `GET` | `/tmdb/series/:id/providers` | Plataformas oficiais onde assistir no Brasil |
+| `GET` | `/tmdb/series/:id/credits` | Elenco e equipe técnica da série |
+| `GET` | `/tmdb/person/:id` | Biografia, dados pessoais e filmografia de ator/diretor |
+| `GET` | `/tmdb/search?query=...` | Busca unificada por texto em filmes e séries |
+| `GET` | `/tmdb/genres/movies` | Lista de gêneros de filmes em Português |
+| `GET` | `/tmdb/genres/series` | Lista de gêneros de séries em Português |

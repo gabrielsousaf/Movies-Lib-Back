@@ -67,12 +67,39 @@ export class FavoritesService {
     return { message: 'Item removido dos favoritos com sucesso.' };
   }
 
-  async getMyFavorites(userId: string, type?: MediaTypeDto) {
+  async getMyFavorites(userId: string, type?: MediaTypeDto, page?: number, limit?: number) {
+    const where = {
+      userId,
+      ...(type ? { mediaType: type as unknown as MediaType } : {}),
+    };
+
+    if (page || limit) {
+      const take = limit && limit > 0 ? Math.min(limit, 100) : 20;
+      const skip = page && page > 0 ? (page - 1) * take : 0;
+
+      const [total, data] = await Promise.all([
+        this.prisma.favorite.count({ where }),
+        this.prisma.favorite.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take,
+        }),
+      ]);
+
+      return {
+        data,
+        meta: {
+          total,
+          page: page || 1,
+          limit: take,
+          totalPages: Math.ceil(total / take),
+        },
+      };
+    }
+
     return this.prisma.favorite.findMany({
-      where: {
-        userId,
-        ...(type ? { mediaType: type as unknown as MediaType } : {}),
-      },
+      where,
       orderBy: { createdAt: 'desc' },
     });
   }

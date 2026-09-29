@@ -1,10 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -15,7 +15,9 @@ import {
 } from '@nestjs/swagger';
 import { UsersService } from './users.service.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 
 @ApiTags('Usuários & Perfis Públicos')
@@ -32,15 +34,16 @@ export class UsersController {
   }
 
   @Get(':username/favorites')
-  @ApiOperation({ summary: 'Listar os favoritos de outro usuário (se o perfil for público)' })
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar os favoritos de outro usuário (se o perfil for público ou você for o dono)' })
   @ApiResponse({ status: 200, description: 'Lista de filmes e séries favoritados por esse usuário.' })
   @ApiResponse({ status: 403, description: 'Lista privada.' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
   async getPublicFavorites(
     @Param('username') username: string,
-    @Req() req: any,
+    @CurrentUser('id') currentUserId?: string,
   ) {
-    const currentUserId = req.user?.id;
     return this.usersService.getPublicFavorites(username, currentUserId);
   }
 
@@ -55,5 +58,28 @@ export class UsersController {
     @Body() dto: UpdateUserDto,
   ) {
     return this.usersService.updateMe(userId, dto);
+  }
+
+  @Patch('me/password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Alterar a senha do usuário autenticado' })
+  @ApiResponse({ status: 200, description: 'Senha alterada com sucesso.' })
+  @ApiResponse({ status: 401, description: 'Senha atual incorreta ou não autorizado.' })
+  async changePassword(
+    @CurrentUser('id') userId: string,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.usersService.changePassword(userId, dto);
+  }
+
+  @Delete('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Excluir definitivamente a conta do usuário autenticado e seus dados' })
+  @ApiResponse({ status: 200, description: 'Conta excluída com sucesso.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
+  async deleteAccount(@CurrentUser('id') userId: string) {
+    return this.usersService.deleteAccount(userId);
   }
 }
