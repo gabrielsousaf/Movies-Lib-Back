@@ -18,6 +18,12 @@ describe('ReviewsService', () => {
       count: vi.fn(),
       aggregate: vi.fn(),
     },
+    reviewLike: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      delete: vi.fn(),
+      count: vi.fn(),
+    },
     user: {
       findUnique: vi.fn(),
     },
@@ -66,7 +72,34 @@ describe('ReviewsService', () => {
       });
 
       expect(result.message).toBe('Avaliação registrada com sucesso!');
-      expect(result.review).toEqual(mockReview);
+      expect(result.review).toEqual({
+        ...mockReview,
+        totalLikes: 0,
+      });
+    });
+  });
+
+  describe('toggleLikeReview', () => {
+    it('should add like if not liked yet', async () => {
+      mockPrismaService.review.findUnique.mockResolvedValueOnce({ id: 'rev-1' });
+      mockPrismaService.reviewLike.findUnique.mockResolvedValueOnce(null);
+      mockPrismaService.reviewLike.create.mockResolvedValueOnce({});
+      mockPrismaService.reviewLike.count.mockResolvedValueOnce(1);
+
+      const result = await service.toggleLikeReview('user-1', 'rev-1');
+      expect(result.liked).toBe(true);
+      expect(result.totalLikes).toBe(1);
+    });
+
+    it('should remove like if already liked', async () => {
+      mockPrismaService.review.findUnique.mockResolvedValueOnce({ id: 'rev-1' });
+      mockPrismaService.reviewLike.findUnique.mockResolvedValueOnce({ id: 'like-1' });
+      mockPrismaService.reviewLike.delete.mockResolvedValueOnce({});
+      mockPrismaService.reviewLike.count.mockResolvedValueOnce(0);
+
+      const result = await service.toggleLikeReview('user-1', 'rev-1');
+      expect(result.liked).toBe(false);
+      expect(result.totalLikes).toBe(0);
     });
   });
 

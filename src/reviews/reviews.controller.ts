@@ -66,8 +66,23 @@ export class ReviewsController {
     return this.reviewsService.deleteReview(userId, id);
   }
 
+  @Post(':id/like')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Curtir ou descurtir uma avaliação (toggle like)' })
+  @ApiResponse({ status: 200, description: 'Status de curtida alterado com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Avaliação não encontrada.' })
+  async toggleLike(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.reviewsService.toggleLikeReview(userId, id);
+  }
+
   @Get('media/:tmdbId')
-  @ApiOperation({ summary: 'Listar todas as avaliações da comunidade para um título (com nota média e paginação)' })
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar todas as avaliações da comunidade para um título (com nota média, likes e paginação)' })
   @ApiQuery({ name: 'type', enum: MediaTypeDto, description: 'Tipo da mídia (MOVIE ou TV)' })
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 10 })
@@ -76,8 +91,9 @@ export class ReviewsController {
     @Query('type', new ParseEnumPipe(MediaTypeDto)) type: MediaTypeDto,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @CurrentUser('id') currentUserId?: string,
   ) {
-    return this.reviewsService.getMediaReviews(tmdbId, type, page || 1, limit || 10);
+    return this.reviewsService.getMediaReviews(tmdbId, type, page || 1, limit || 10, currentUserId);
   }
 
   @Get('me')

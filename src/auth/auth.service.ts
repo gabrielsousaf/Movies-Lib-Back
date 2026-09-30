@@ -1,13 +1,17 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 
 @Injectable()
 export class AuthService {
@@ -97,6 +101,71 @@ export class AuthService {
         isPublic: user.isPublic,
       },
       accessToken: token,
+    };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const email = dto.email.toLowerCase().trim();
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true },
+    });
+
+    if (!user) {
+      // Retorno genérico para segurança (evitar enumeração de e-mails)
+      return {
+        message: 'Se este e-mail estiver cadastrado, as instruções para redefinição foram enviadas.',
+      };
+    }
+
+    // Remove tokens anteriores deste usuário
+    await this.prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id },
+    });
+
+    const token = randomUUID();
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hora de validade
+
+    await this.prisma.passwordResetToken.create({
+      data: {
+        token,
+        userId: user.id,
+        expiresAt,
+      },
+    });
+
+    return {
+      message: 'Token de recuperação gerado com sucesso.',
+      resetToken: token,
+      expiresAt,
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const resetRecord = await this.prisma.passwordResetToken.findUnique({
+      where: { token: dto.token },
+    });
+
+    if (!resetRecord || resetRecord.expiresAt < new Date()) {
+      throw new BadRequestException('Token de recuperação inválido ou expirado.');
+    }
+
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(dto.newPassword, saltRounds);
+
+    await this.prisma.user.update({
+      where: { id: resetRecord.userId },
+      data: { passwordHash },
+    });
+
+    // Remove o token utilizado
+    await this.prisma.passwordResetToken.deleteMany({
+      where: { userId: resetRecord.userId },
+    });
+
+    return {
+      message: 'Senha redefinida com sucesso! Você já pode fazer login com a sua nova senha.',
     };
   }
 

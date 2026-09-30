@@ -4,12 +4,16 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
+  Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -26,11 +30,16 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get(':username')
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter perfil público de um usuário pelo @username' })
-  @ApiResponse({ status: 200, description: 'Dados públicos do perfil e total de favoritos.' })
+  @ApiResponse({ status: 200, description: 'Dados públicos do perfil e estatísticas de engajamento.' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
-  async getPublicProfile(@Param('username') username: string) {
-    return this.usersService.getPublicProfile(username);
+  async getPublicProfile(
+    @Param('username') username: string,
+    @CurrentUser('id') currentUserId?: string,
+  ) {
+    return this.usersService.getPublicProfile(username, currentUserId);
   }
 
   @Get(':username/favorites')
@@ -45,6 +54,57 @@ export class UsersController {
     @CurrentUser('id') currentUserId?: string,
   ) {
     return this.usersService.getPublicFavorites(username, currentUserId);
+  }
+
+  @Post(':username/follow')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Seguir um usuário' })
+  @ApiResponse({ status: 200, description: 'Usuário seguido com sucesso.' })
+  @ApiResponse({ status: 400, description: 'Não é possível seguir a si mesmo.' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+  async followUser(
+    @CurrentUser('id') followerId: string,
+    @Param('username') username: string,
+  ) {
+    return this.usersService.followUser(followerId, username);
+  }
+
+  @Delete(':username/follow')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Deixar de seguir um usuário' })
+  @ApiResponse({ status: 200, description: 'Deixou de seguir o usuário com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+  async unfollowUser(
+    @CurrentUser('id') followerId: string,
+    @Param('username') username: string,
+  ) {
+    return this.usersService.unfollowUser(followerId, username);
+  }
+
+  @Get(':username/followers')
+  @ApiOperation({ summary: 'Listar seguidores de um usuário' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 20 })
+  async getFollowers(
+    @Param('username') username: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.usersService.getFollowers(username, page, limit);
+  }
+
+  @Get(':username/following')
+  @ApiOperation({ summary: 'Listar quem o usuário está seguindo' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 20 })
+  async getFollowing(
+    @Param('username') username: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.usersService.getFollowing(username, page, limit);
   }
 
   @Patch('me')

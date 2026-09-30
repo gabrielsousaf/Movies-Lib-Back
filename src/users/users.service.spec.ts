@@ -11,8 +11,16 @@ describe('UsersService', () => {
     user: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      delete: vi.fn(),
     },
     favorite: {
+      findMany: vi.fn(),
+    },
+    follow: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      delete: vi.fn(),
+      count: vi.fn(),
       findMany: vi.fn(),
     },
   };
@@ -87,6 +95,32 @@ describe('UsersService', () => {
 
       await expect(service.getPublicFavorites('nonexistent')).rejects.toThrow(
         "Usuário '@nonexistent' não foi encontrado.",
+      );
+    });
+  });
+
+  describe('followUser', () => {
+    it('should follow user successfully', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({
+        id: 'user-2',
+        username: 'lucas',
+      });
+      mockPrismaService.follow.findUnique.mockResolvedValueOnce(null);
+      mockPrismaService.follow.create.mockResolvedValueOnce({});
+
+      const result = await service.followUser('user-1', 'lucas');
+      expect(result.isFollowing).toBe(true);
+      expect(result.message).toContain('começou a seguir @lucas');
+    });
+
+    it('should prevent user from following themselves', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValueOnce({
+        id: 'user-1',
+        username: 'gabriel',
+      });
+
+      await expect(service.followUser('user-1', 'gabriel')).rejects.toThrow(
+        'Você não pode seguir a si mesmo.',
       );
     });
   });

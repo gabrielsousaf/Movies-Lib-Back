@@ -15,41 +15,59 @@ enum MediaType {
 
 enum WatchStatus {
   WATCHLIST // Quero Assistir
-  WATCHED   // Já Assisti
+  WATCHED // Já Assisti
 }
 
 model User {
-  id           String      @id @default(uuid())
-  username     String      @unique
-  email        String      @unique
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
   passwordHash String
   displayName  String?
   avatarUrl    String?
   bio          String?
-  isPublic     Boolean     @default(true)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  isPublic     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  favorites    Favorite[]
-  watchlist    WatchlistItem[]
-  reviews      Review[]
+  favorites           Favorite[]
+  watchlist           WatchlistItem[]
+  reviews             Review[]
+  passwordResetTokens PasswordResetToken[]
+  customLists         CustomList[]
+  reviewLikes         ReviewLike[]
+  followers           Follow[]             @relation("UserFollowed")
+  following           Follow[]             @relation("UserFollowing")
 
   @@map("users")
 }
 
-model Favorite {
-  id            String    @id @default(uuid())
-  userId        String
-  tmdbId        Int
-  mediaType     MediaType
-  title         String
-  posterPath    String?
-  backdropPath  String?
-  voteAverage   Float?
-  releaseDate   String?
-  createdAt     DateTime  @default(now())
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model Favorite {
+  id           String    @id @default(uuid())
+  userId       String
+  tmdbId       Int
+  mediaType    MediaType
+  title        String
+  posterPath   String?
+  backdropPath String?
+  voteAverage  Float?
+  releaseDate  String?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, tmdbId, mediaType])
   @@index([userId])
@@ -57,20 +75,20 @@ model Favorite {
 }
 
 model WatchlistItem {
-  id            String       @id @default(uuid())
-  userId        String
-  tmdbId        Int
-  mediaType     MediaType
-  title         String
-  posterPath    String?
-  backdropPath  String?
-  voteAverage   Float?
-  releaseDate   String?
-  status        WatchStatus  @default(WATCHLIST)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id           String      @id @default(uuid())
+  userId       String
+  tmdbId       Int
+  mediaType    MediaType
+  title        String
+  posterPath   String?
+  backdropPath String?
+  voteAverage  Float?
+  releaseDate  String?
+  status       WatchStatus @default(WATCHLIST)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, tmdbId, mediaType])
   @@index([userId, status])
@@ -78,21 +96,87 @@ model WatchlistItem {
 }
 
 model Review {
-  id            String     @id @default(uuid())
-  userId        String
-  tmdbId        Int
-  mediaType     MediaType
-  title         String
-  posterPath    String?
-  rating        Float      // Nota de 1 a 10
-  content       String?    // Resenha ou comentário
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id         String    @id @default(uuid())
+  userId     String
+  tmdbId     Int
+  mediaType  MediaType
+  title      String
+  posterPath String?
+  rating     Float // Nota de 1 a 10
+  content    String? // Resenha ou comentário
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes ReviewLike[]
 
   @@unique([userId, tmdbId, mediaType])
   @@index([tmdbId, mediaType])
   @@index([userId])
   @@map("reviews")
+}
+
+model ReviewLike {
+  id        String   @id @default(uuid())
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
+  @@index([userId])
+  @@map("review_likes")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowed", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+model CustomList {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  description String?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CustomListItem[]
+
+  @@index([userId])
+  @@map("custom_lists")
+}
+
+model CustomListItem {
+  id           String    @id @default(uuid())
+  listId       String
+  tmdbId       Int
+  mediaType    MediaType
+  title        String
+  posterPath   String?
+  backdropPath String?
+  voteAverage  Float?
+  releaseDate  String?
+  addedAt      DateTime  @default(now())
+
+  list CustomList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, tmdbId, mediaType])
+  @@index([listId])
+  @@map("custom_list_items")
 }

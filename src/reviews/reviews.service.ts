@@ -48,12 +48,18 @@ export class ReviewsService {
             avatarUrl: true,
           },
         },
+        _count: {
+          select: { likes: true },
+        },
       },
     });
 
     return {
       message: 'Avaliação registrada com sucesso!',
-      review,
+      review: {
+        ...review,
+        totalLikes: review._count?.likes ?? 0,
+      },
     };
   }
 
@@ -85,12 +91,18 @@ export class ReviewsService {
             avatarUrl: true,
           },
         },
+        _count: {
+          select: { likes: true },
+        },
       },
     });
 
     return {
       message: 'Avaliação atualizada com sucesso.',
-      review: updated,
+      review: {
+        ...updated,
+        totalLikes: updated._count?.likes ?? 0,
+      },
     };
   }
 
@@ -114,11 +126,64 @@ export class ReviewsService {
     return { message: 'Avaliação excluída com sucesso.' };
   }
 
+  async toggleLikeReview(userId: string, reviewId: string) {
+    const review = await this.prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { id: true },
+    });
+
+    if (!review) {
+      throw new NotFoundException('Avaliação não encontrada.');
+    }
+
+    const existingLike = await this.prisma.reviewLike.findUnique({
+      where: {
+        reviewId_userId: {
+          reviewId,
+          userId,
+        },
+      },
+    });
+
+    let liked = false;
+
+    if (existingLike) {
+      await this.prisma.reviewLike.delete({
+        where: {
+          reviewId_userId: {
+            reviewId,
+            userId,
+          },
+        },
+      });
+      liked = false;
+    } else {
+      await this.prisma.reviewLike.create({
+        data: {
+          reviewId,
+          userId,
+        },
+      });
+      liked = true;
+    }
+
+    const totalLikes = await this.prisma.reviewLike.count({
+      where: { reviewId },
+    });
+
+    return {
+      message: liked ? 'Avaliação curtida com sucesso!' : 'Curtida removida com sucesso.',
+      liked,
+      totalLikes,
+    };
+  }
+
   async getMediaReviews(
     tmdbId: number,
     mediaType: MediaTypeDto,
     page = 1,
     limit = 10,
+    currentUserId?: string,
   ) {
     const take = limit > 0 ? Math.min(limit, 50) : 10;
     const skip = page > 0 ? (page - 1) * take : 0;
@@ -144,6 +209,17 @@ export class ReviewsService {
               avatarUrl: true,
             },
           },
+          _count: {
+            select: { likes: true },
+          },
+          ...(currentUserId
+            ? {
+                likes: {
+                  where: { userId: currentUserId },
+                  select: { id: true },
+                },
+              }
+            : {}),
         },
       }),
       this.prisma.review.aggregate({
@@ -153,12 +229,28 @@ export class ReviewsService {
       }),
     ]);
 
+    const formattedReviews = reviews.map((r: any) => ({
+      id: r.id,
+      userId: r.userId,
+      tmdbId: r.tmdbId,
+      mediaType: r.mediaType,
+      title: r.title,
+      posterPath: r.posterPath,
+      rating: r.rating,
+      content: r.content,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      user: r.user,
+      totalLikes: r._count?.likes ?? 0,
+      isLiked: Boolean(r.likes && r.likes.length > 0),
+    }));
+
     return {
       stats: {
         averageRating: aggregate._avg.rating ? Number(aggregate._avg.rating.toFixed(1)) : null,
         totalReviews: aggregate._count.rating,
       },
-      data: reviews,
+      data: formattedReviews,
       meta: {
         total,
         page,
@@ -177,9 +269,19 @@ export class ReviewsService {
           mediaType: mediaType as unknown as MediaType,
         },
       },
+      include: {
+        _count: {
+          select: { likes: true },
+        },
+      },
     });
 
-    return review;
+    if (!review) return null;
+
+    return {
+      ...review,
+      totalLikes: review._count?.likes ?? 0,
+    };
   }
 
   async getMyReviews(userId: string, page = 1, limit = 20) {
@@ -195,11 +297,19 @@ export class ReviewsService {
         orderBy: { createdAt: 'desc' },
         skip,
         take,
+        include: {
+          _count: {
+            select: { likes: true },
+          },
+        },
       }),
     ]);
 
     return {
-      data: reviews,
+      data: reviews.map((r) => ({
+        ...r,
+        totalLikes: r._count?.likes ?? 0,
+      })),
       meta: {
         total,
         page,

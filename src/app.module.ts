@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module.js';
 import { FavoritesModule } from './favorites/favorites.module.js';
 import { WatchlistModule } from './watchlist/watchlist.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
+import { ListsModule } from './lists/lists.module.js';
 import { TmdbModule } from './tmdb/tmdb.module.js';
 
 @Module({
@@ -19,6 +20,7 @@ import { TmdbModule } from './tmdb/tmdb.module.js';
     FavoritesModule,
     WatchlistModule,
     ReviewsModule,
+    ListsModule,
     TmdbModule,
   ],
 })

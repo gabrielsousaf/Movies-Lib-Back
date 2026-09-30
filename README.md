@@ -60,16 +60,34 @@ npm run build
 | :--- | :--- | :--- | :--- |
 | `POST` | `/auth/register` | Pública | Cadastra usuário com validações e hash `bcrypt` |
 | `POST` | `/auth/login` | Pública | Autentica e devolve o Token JWT e dados do perfil |
+| `POST` | `/auth/forgot-password` | Pública | Gera token para recuperação de senha esquecida |
+| `POST` | `/auth/reset-password` | Pública | Redefine a senha com token temporário válido |
 | `GET` | `/auth/me` | JWT | Retorna o perfil do usuário atualmente autenticado |
 
 ### 👤 Usuários & Perfis (`/users`)
 | Método | Rota | Proteção | Descrição |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/users/:username` | Pública | Perfil público e contagem de favoritos, watchlist e reviews |
+| `GET` | `/users/:username` | Opcional | Perfil público, contadores (favoritos, listas, seguidores, etc.) e status de follow |
 | `GET` | `/users/:username/favorites` | Opcional | Lista favoritos do usuário (se público ou se for o próprio dono) |
+| `POST` | `/users/:username/follow` | JWT | Começa a seguir o perfil indicado |
+| `DELETE` | `/users/:username/follow` | JWT | Deixa de seguir o perfil indicado |
+| `GET` | `/users/:username/followers` | Pública | Lista os seguidores do usuário com paginação |
+| `GET` | `/users/:username/following` | Pública | Lista quem o usuário está seguindo com paginação |
 | `PATCH` | `/users/me` | JWT | Atualiza dados cadastrais, bio, avatar e visibilidade (`isPublic`) |
 | `PATCH` | `/users/me/password` | JWT | Altera a senha do usuário autenticado |
 | `DELETE` | `/users/me` | JWT | Exclui definitivamente a conta e todos os dados associados em cascata |
+
+### 📋 Listas Personalizadas (`/lists`)
+| Método | Rota | Proteção | Descrição |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/lists` | JWT | Cria uma nova lista personalizada (com título, descrição e visibilidade) |
+| `GET` | `/lists/me` | JWT | Retorna todas as listas criadas pelo usuário logado |
+| `GET` | `/lists/:id` | Opcional | Detalhes da lista e seus filmes/séries salvos |
+| `PATCH` | `/lists/:id` | JWT | Atualiza título, descrição ou visibilidade da lista |
+| `DELETE` | `/lists/:id` | JWT | Remove uma lista personalizada |
+| `POST` | `/lists/:id/items` | JWT | Adiciona filme ou série a uma lista |
+| `DELETE` | `/lists/:id/items/:tmdbId?type=MOVIE` | JWT | Remove filme ou série de uma lista |
+| `GET` | `/lists/user/:username` | Opcional | Listas públicas criadas por outro usuário |
 
 ### ❤️ Favoritos (`/favorites`)
 | Método | Rota | Proteção | Descrição |
@@ -95,7 +113,8 @@ npm run build
 | `POST` | `/reviews` | JWT | Registra ou atualiza nota (0.5 a 10) e resenha |
 | `PATCH` | `/reviews/:id` | JWT | Edita nota ou comentário de uma avaliação |
 | `DELETE` | `/reviews/:id` | JWT | Exclui uma avaliação |
-| `GET` | `/reviews/media/:tmdbId?type=MOVIE&page=1&limit=10` | Pública | Avaliações da comunidade, nota média agregada e total |
+| `POST` | `/reviews/:id/like` | JWT | Curte ou descurte uma avaliação (toggle like) |
+| `GET` | `/reviews/media/:tmdbId?type=MOVIE&page=1&limit=10` | Opcional | Avaliações da comunidade, nota média agregada, total de curtidas e status `isLiked` |
 | `GET` | `/reviews/me?page=1&limit=20` | JWT | Minhas avaliações |
 | `GET` | `/reviews/me/media/:tmdbId?type=MOVIE` | JWT | Minha nota/avaliação específica para um título |
 | `GET` | `/reviews/user/:username` | Opcional | Lista avaliações feitas por outro usuário |
