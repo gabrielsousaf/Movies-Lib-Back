@@ -15,6 +15,17 @@ export class TmdbController {
   constructor(private readonly tmdbService: TmdbService) {}
 
   // ================= FILMES =================
+  
+  @Get('movies/search')
+  @ApiOperation({ summary: 'Pesquisar exclusivamente por filmes' })
+  @ApiQuery({ name: 'query', required: true, example: 'Batman' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  async searchMovies(
+    @Query('query') query: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+  ) {
+    return this.tmdbService.searchMovies(query, page || 1);
+  }
 
   @Get('movies/popular')
   @ApiOperation({ summary: 'Listar filmes populares do TMDB' })
@@ -47,9 +58,13 @@ export class TmdbController {
   @Get('movies/trending')
   @ApiOperation({ summary: 'Listar filmes em alta (trending) no dia ou na semana' })
   @ApiQuery({ name: 'timeWindow', enum: ['day', 'week'], required: false, example: 'day' })
-  async getTrendingMovies(@Query('timeWindow') timeWindow?: 'day' | 'week') {
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  async getTrendingMovies(
+    @Query('timeWindow') timeWindow?: 'day' | 'week',
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+  ) {
     const validWindow = timeWindow === 'week' ? 'week' : 'day';
-    return this.tmdbService.getTrendingMovies(validWindow);
+    return this.tmdbService.getTrendingMovies(validWindow, page || 1);
   }
 
   @Get('movies/discover')
@@ -81,6 +96,32 @@ export class TmdbController {
     return this.tmdbService.getMovieDetails(id);
   }
 
+  @Get('collections/:id')
+  @ApiOperation({ summary: 'Obter detalhes de uma coleção de filmes (ex: trilogias)' })
+  async getCollection(@Param('id', ParseIntPipe) id: number) {
+    return this.tmdbService.getCollection(id);
+  }
+
+  @Get('movies/:id/similar')
+  @ApiOperation({ summary: 'Listar filmes similares a um filme específico' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  async getSimilarMovies(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+  ) {
+    return this.tmdbService.getSimilarMovies(id, page || 1);
+  }
+
+  @Get('movies/:id/recommendations')
+  @ApiOperation({ summary: 'Listar filmes recomendados com base em um filme específico' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  async getRecommendedMovies(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+  ) {
+    return this.tmdbService.getRecommendedMovies(id, page || 1);
+  }
+
   @Get('movies/:id/trailer')
   @ApiOperation({ summary: 'Buscar o trailer oficial do filme no YouTube via TMDB' })
   async getMovieTrailer(@Param('id', ParseIntPipe) id: number) {
@@ -100,6 +141,17 @@ export class TmdbController {
   }
 
   // ================= SÉRIES =================
+  
+  @Get('series/search')
+  @ApiOperation({ summary: 'Pesquisar exclusivamente por séries' })
+  @ApiQuery({ name: 'query', required: true, example: 'Breaking Bad' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  async searchSeries(
+    @Query('query') query: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+  ) {
+    return this.tmdbService.searchSeries(query, page || 1);
+  }
 
   @Get('series/popular')
   @ApiOperation({ summary: 'Listar séries populares do TMDB' })
@@ -118,9 +170,13 @@ export class TmdbController {
   @Get('series/trending')
   @ApiOperation({ summary: 'Listar séries em alta no TMDB' })
   @ApiQuery({ name: 'timeWindow', enum: ['day', 'week'], required: false, example: 'day' })
-  async getTrendingSeries(@Query('timeWindow') timeWindow?: 'day' | 'week') {
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  async getTrendingSeries(
+    @Query('timeWindow') timeWindow?: 'day' | 'week',
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+  ) {
     const validWindow = timeWindow === 'week' ? 'week' : 'day';
-    return this.tmdbService.getTrendingSeries(validWindow);
+    return this.tmdbService.getTrendingSeries(validWindow, page || 1);
   }
 
   @Get('series/discover')
@@ -150,6 +206,26 @@ export class TmdbController {
   @ApiOperation({ summary: 'Obter detalhes completos da série e lista de temporadas' })
   async getSeriesDetails(@Param('id', ParseIntPipe) id: number) {
     return this.tmdbService.getSeriesDetails(id);
+  }
+
+  @Get('series/:id/similar')
+  @ApiOperation({ summary: 'Listar séries similares a uma série específica' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  async getSimilarSeries(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+  ) {
+    return this.tmdbService.getSimilarSeries(id, page || 1);
+  }
+
+  @Get('series/:id/recommendations')
+  @ApiOperation({ summary: 'Listar séries recomendadas com base em uma série específica' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  async getRecommendedSeries(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+  ) {
+    return this.tmdbService.getRecommendedSeries(id, page || 1);
   }
 
   @Get('series/:id/season/:seasonNumber')

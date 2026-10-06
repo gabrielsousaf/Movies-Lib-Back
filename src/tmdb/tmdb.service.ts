@@ -59,9 +59,9 @@ export class TmdbService {
     }
   }
 
-  async getTrendingMovies(timeWindow: 'day' | 'week' = 'day') {
+  async getTrendingMovies(timeWindow: 'day' | 'week' = 'day', page = 1) {
     try {
-      const response = await this.client.get(`/trending/movie/${timeWindow}`);
+      const response = await this.client.get(`/trending/movie/${timeWindow}`, { params: { page } });
       return response.data;
     } catch (error) {
       this.handleError(error);
@@ -72,9 +72,36 @@ export class TmdbService {
     try {
       const response = await this.client.get(`/movie/${id}`, {
         params: {
-          append_to_response: 'credits,recommendations,videos,watch/providers',
+          append_to_response: 'credits,recommendations,videos,watch/providers,images',
         },
       });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async getCollection(id: number) {
+    try {
+      const response = await this.client.get(`/collection/${id}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async getSimilarMovies(id: number, page = 1) {
+    try {
+      const response = await this.client.get(`/movie/${id}/similar`, { params: { page } });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async getRecommendedMovies(id: number, page = 1) {
+    try {
+      const response = await this.client.get(`/movie/${id}/recommendations`, { params: { page } });
       return response.data;
     } catch (error) {
       this.handleError(error);
@@ -169,9 +196,9 @@ export class TmdbService {
     }
   }
 
-  async getTrendingSeries(timeWindow: 'day' | 'week' = 'day') {
+  async getTrendingSeries(timeWindow: 'day' | 'week' = 'day', page = 1) {
     try {
-      const response = await this.client.get(`/trending/tv/${timeWindow}`);
+      const response = await this.client.get(`/trending/tv/${timeWindow}`, { params: { page } });
       return response.data;
     } catch (error) {
       this.handleError(error);
@@ -182,9 +209,27 @@ export class TmdbService {
     try {
       const response = await this.client.get(`/tv/${id}`, {
         params: {
-          append_to_response: 'credits,recommendations,videos,watch/providers',
+          append_to_response: 'credits,recommendations,videos,watch/providers,images',
         },
       });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async getSimilarSeries(id: number, page = 1) {
+    try {
+      const response = await this.client.get(`/tv/${id}/similar`, { params: { page } });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async getRecommendedSeries(id: number, page = 1) {
+    try {
+      const response = await this.client.get(`/tv/${id}/recommendations`, { params: { page } });
       return response.data;
     } catch (error) {
       this.handleError(error);
@@ -273,6 +318,28 @@ export class TmdbService {
   async multiSearch(query: string, page = 1) {
     try {
       const response = await this.client.get('/search/multi', {
+        params: { query, page },
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async searchMovies(query: string, page = 1) {
+    try {
+      const response = await this.client.get('/search/movie', {
+        params: { query, page },
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async searchSeries(query: string, page = 1) {
+    try {
+      const response = await this.client.get('/search/tv', {
         params: { query, page },
       });
       return response.data;
