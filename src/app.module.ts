@@ -10,9 +10,16 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ListsModule } from './lists/lists.module.js';
 import { TmdbModule } from './tmdb/tmdb.module.js';
+import { EpisodesModule } from './episodes/episodes.module.js';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -30,6 +37,7 @@ import { TmdbModule } from './tmdb/tmdb.module.js';
     ReviewsModule,
     ListsModule,
     TmdbModule,
+    EpisodesModule,
   ],
   providers: [
     {

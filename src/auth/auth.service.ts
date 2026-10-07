@@ -40,12 +40,18 @@ export class AuthService {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(dto.password, saltRounds);
 
+    // Gerar um código de 6 dígitos
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+
     const user = await this.prisma.user.create({
       data: {
         username: dto.username.toLowerCase().trim(),
         email: dto.email.toLowerCase().trim(),
         passwordHash,
         displayName: dto.displayName?.trim() || dto.username.trim(),
+        verificationCode,
+        verificationCodeExpiresAt,
       },
       select: {
         id: true,
@@ -55,15 +61,68 @@ export class AuthService {
         avatarUrl: true,
         bio: true,
         isPublic: true,
+        isEmailVerified: true,
         createdAt: true,
+      },
+    });
+
+    // SIMULANDO O ENVIO DO E-MAIL:
+    console.log(`\n=========================================`);
+    console.log(`✉️ SIMULAÇÃO DE E-MAIL (Ethereal/SendGrid)`);
+    console.log(`Para: ${user.email}`);
+    console.log(`Assunto: Seu código de verificação MoviesLib`);
+    console.log(`Código: ${verificationCode}`);
+    console.log(`=========================================\n`);
+
+    return {
+      message: 'Usuário cadastrado! Por favor, verifique seu e-mail para ativar a conta.',
+      requireVerification: true,
+      user,
+    };
+  }
+
+  async verifyEmail(email: string, code: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado.');
+    }
+
+    if (user.isEmailVerified) {
+      throw new ConflictException('Este e-mail já foi verificado.');
+    }
+
+    if (user.verificationCode !== code) {
+      throw new UnauthorizedException('Código de verificação inválido.');
+    }
+
+    if (user.verificationCodeExpiresAt && user.verificationCodeExpiresAt < new Date()) {
+      throw new UnauthorizedException('Código de verificação expirado.');
+    }
+
+    // Marca como verificado
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isEmailVerified: true,
+        verificationCode: null,
+        verificationCodeExpiresAt: null,
       },
     });
 
     const token = await this.generateToken(user.id, user.username, user.email);
 
     return {
-      message: 'Usuário cadastrado com sucesso!',
-      user,
+      message: 'E-mail verificado com sucesso!',
+      user: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        displayName: updatedUser.displayName,
+        avatarUrl: updatedUser.avatarUrl,
+      },
       accessToken: token,
     };
   }

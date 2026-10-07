@@ -8,6 +8,7 @@ import {
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { VerifyEmailDto } from './dto/verify-email.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
@@ -24,6 +25,14 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Username ou email já cadastrado.' })
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
+  }
+
+  @Post('verify-email')
+  @ApiOperation({ summary: 'Verificar e-mail com código de 6 dígitos' })
+  @ApiResponse({ status: 200, description: 'E-mail verificado com sucesso.' })
+  @ApiResponse({ status: 401, description: 'Código inválido ou expirado.' })
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto.email, dto.code);
   }
 
   @Post('login')

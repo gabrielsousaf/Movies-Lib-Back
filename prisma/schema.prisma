@@ -25,9 +25,12 @@ model User {
   passwordHash String
   displayName  String?
   avatarUrl    String?
-  bio          String?
-  isPublic     Boolean  @default(true)
-  createdAt    DateTime @default(now())
+  bio                       String?
+  isPublic                  Boolean  @default(true)
+  isEmailVerified           Boolean  @default(false)
+  verificationCode          String?
+  verificationCodeExpiresAt DateTime?
+  createdAt                 DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   favorites           Favorite[]
@@ -38,6 +41,7 @@ model User {
   reviewLikes         ReviewLike[]
   followers           Follow[]             @relation("UserFollowed")
   following           Follow[]             @relation("UserFollowing")
+  watchedEpisodes     WatchedEpisode[]
 
   @@map("users")
 }
@@ -179,4 +183,20 @@ model CustomListItem {
   @@unique([listId, tmdbId, mediaType])
   @@index([listId])
   @@map("custom_list_items")
+}
+
+
+model WatchedEpisode {
+  id            String   @id @default(uuid())
+  userId        String
+  showId        Int
+  seasonNumber  Int
+  episodeNumber Int
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, showId, seasonNumber, episodeNumber])
+  @@index([userId, showId])
+  @@map("watched_episodes")
 }
