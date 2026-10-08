@@ -37,6 +37,17 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'Pesquisar usuários por nome ou username' })
+  @ApiQuery({ name: 'q', required: true, description: 'Termo de busca' })
+  @ApiQuery({ name: 'limit', required: false, example: 10 })
+  async searchUsers(
+    @Query('q') query: string,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.usersService.searchUsers(query, limit);
+  }
+
   @Get(':username')
   @UseGuards(OptionalJwtAuthGuard)
   @ApiBearerAuth()

@@ -14,6 +14,36 @@ import { ChangePasswordDto } from './dto/change-password.dto.js';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async searchUsers(query: string, limit = 10) {
+    if (!query || query.trim() === '') {
+      return { data: [] };
+    }
+
+    const take = limit > 0 ? Math.min(limit, 50) : 10;
+    const searchTerm = `%${query.trim()}%`;
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        OR: [
+          { username: { contains: query.trim(), mode: 'insensitive' } },
+          { displayName: { contains: query.trim(), mode: 'insensitive' } },
+        ],
+        isPublic: true,
+      },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        bio: true,
+      },
+      take,
+      orderBy: { username: 'asc' },
+    });
+
+    return { data: users };
+  }
+
   async getPublicProfile(username: string, currentUserId?: string) {
     const normalizedUsername = username.toLowerCase().trim();
 
