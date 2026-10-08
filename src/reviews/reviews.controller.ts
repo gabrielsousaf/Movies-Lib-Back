@@ -137,4 +137,39 @@ export class ReviewsController {
   ) {
     return this.reviewsService.getUserReviews(username, currentUserId, page || 1, limit || 20);
   }
+
+  @Post(':id/comments')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Adicionar comentário a uma avaliação' })
+  async addComment(
+    @CurrentUser('id') userId: string,
+    @Param('id') reviewId: string,
+    @Body('content') content: string,
+  ) {
+    return this.reviewsService.addComment(userId, reviewId, content);
+  }
+
+  @Get(':id/comments')
+  @ApiOperation({ summary: 'Listar comentários de uma avaliação' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 20 })
+  async getComments(
+    @Param('id') reviewId: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.reviewsService.getComments(reviewId, page || 1, limit || 20);
+  }
+
+  @Delete('comments/:commentId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Excluir um comentário' })
+  async deleteComment(
+    @CurrentUser('id') userId: string,
+    @Param('commentId') commentId: string,
+  ) {
+    return this.reviewsService.deleteComment(userId, commentId);
+  }
 }

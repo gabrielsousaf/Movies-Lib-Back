@@ -19,19 +19,19 @@ enum WatchStatus {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  username     String   @unique
-  email        String   @unique
-  passwordHash String
-  displayName  String?
-  avatarUrl    String?
+  id                        String    @id @default(uuid())
+  username                  String    @unique
+  email                     String    @unique
+  passwordHash              String
+  displayName               String?
+  avatarUrl                 String?
   bio                       String?
-  isPublic                  Boolean  @default(true)
-  isEmailVerified           Boolean  @default(false)
+  isPublic                  Boolean   @default(true)
+  isEmailVerified           Boolean   @default(false)
   verificationCode          String?
   verificationCodeExpiresAt DateTime?
-  createdAt                 DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
 
   favorites           Favorite[]
   watchlist           WatchlistItem[]
@@ -42,6 +42,7 @@ model User {
   followers           Follow[]             @relation("UserFollowed")
   following           Follow[]             @relation("UserFollowing")
   watchedEpisodes     WatchedEpisode[]
+  reviewComments      ReviewComment[]
 
   @@map("users")
 }
@@ -111,8 +112,9 @@ model Review {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  likes ReviewLike[]
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes          ReviewLike[]
+  reviewComments ReviewComment[]
 
   @@unique([userId, tmdbId, mediaType])
   @@index([tmdbId, mediaType])
@@ -185,7 +187,6 @@ model CustomListItem {
   @@map("custom_list_items")
 }
 
-
 model WatchedEpisode {
   id            String   @id @default(uuid())
   userId        String
@@ -199,4 +200,20 @@ model WatchedEpisode {
   @@unique([userId, showId, seasonNumber, episodeNumber])
   @@index([userId, showId])
   @@map("watched_episodes")
+}
+
+model ReviewComment {
+  id        String   @id @default(uuid())
+  reviewId  String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@index([userId])
+  @@map("review_comments")
 }

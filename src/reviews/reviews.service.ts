@@ -340,4 +340,91 @@ export class ReviewsService {
 
     return this.getMyReviews(user.id, page, limit);
   }
+
+  async addComment(userId: string, reviewId: string, content: string) {
+    const review = await this.prisma.review.findUnique({
+      where: { id: reviewId },
+    });
+
+    if (!review) {
+      throw new NotFoundException('Avaliação não encontrada.');
+    }
+
+    const comment = await this.prisma.reviewComment.create({
+      data: {
+        content,
+        userId,
+        reviewId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    return { message: 'Comentário adicionado com sucesso.', comment };
+  }
+
+  async getComments(reviewId: string, page = 1, limit = 20) {
+    const take = limit > 0 ? Math.min(limit, 50) : 20;
+    const skip = page > 0 ? (page - 1) * take : 0;
+
+    const where = { reviewId };
+
+    const [total, comments] = await Promise.all([
+      this.prisma.reviewComment.count({ where }),
+      this.prisma.reviewComment.findMany({
+        where,
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take,
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: comments,
+      meta: {
+        total,
+        page,
+        limit: take,
+        totalPages: Math.ceil(total / take),
+      },
+    };
+  }
+
+  async deleteComment(userId: string, commentId: string) {
+    const comment = await this.prisma.reviewComment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Comentário não encontrado.');
+    }
+
+    if (comment.userId !== userId) {
+      throw new ForbiddenException('Você não tem permissão para excluir este comentário.');
+    }
+
+    await this.prisma.reviewComment.delete({
+      where: { id: commentId },
+    });
+
+    return { message: 'Comentário excluído com sucesso.' };
+  }
 }

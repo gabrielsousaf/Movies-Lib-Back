@@ -13,6 +13,7 @@ import { TmdbModule } from './tmdb/tmdb.module.js';
 import { EpisodesModule } from './episodes/episodes.module.js';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { FeedModule } from './feed/feed.module.js';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { join } from 'path';
     ListsModule,
     TmdbModule,
     EpisodesModule,
+    FeedModule,
   ],
   providers: [
     {
