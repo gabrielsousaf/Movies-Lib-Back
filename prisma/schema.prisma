@@ -43,6 +43,8 @@ model User {
   following           Follow[]             @relation("UserFollowing")
   watchedEpisodes     WatchedEpisode[]
   reviewComments      ReviewComment[]
+  notifications       Notification[]       @relation("UserNotifications")
+  actorNotifications  Notification[]       @relation("ActorNotifications")
 
   @@map("users")
 }
@@ -217,3 +219,29 @@ model ReviewComment {
   @@index([userId])
   @@map("review_comments")
 }
+
+enum NotificationType {
+  NEW_FOLLOWER
+  REVIEW_LIKE
+  REVIEW_COMMENT
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  actorId   String
+  type      NotificationType
+  entityId  String?
+  title     String?
+  content   String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user  User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor User @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+

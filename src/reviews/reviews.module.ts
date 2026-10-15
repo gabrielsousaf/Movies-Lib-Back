@@ -3,9 +3,10 @@ import { ReviewsController } from './reviews.controller.js';
 import { ReviewsService } from './reviews.service.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { AuthModule } from '../auth/auth.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, NotificationsModule],
   controllers: [ReviewsController],
   providers: [ReviewsService],
   exports: [ReviewsService],

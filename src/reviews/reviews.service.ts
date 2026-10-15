@@ -7,11 +7,15 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateReviewDto } from './dto/create-review.dto.js';
 import { UpdateReviewDto } from './dto/update-review.dto.js';
 import { MediaTypeDto } from '../favorites/dto/create-favorite.dto.js';
-import { MediaType } from '@prisma/client';
+import { MediaType, NotificationType } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async upsertReview(userId: string, dto: CreateReviewDto) {
     const mediaType = dto.mediaType as unknown as MediaType;
@@ -129,7 +133,7 @@ export class ReviewsService {
   async toggleLikeReview(userId: string, reviewId: string) {
     const review = await this.prisma.review.findUnique({
       where: { id: reviewId },
-      select: { id: true },
+      select: { id: true, userId: true, title: true },
     });
 
     if (!review) {
@@ -165,6 +169,15 @@ export class ReviewsService {
         },
       });
       liked = true;
+
+      // Notificar o autor da avaliação
+      await this.notificationsService.createNotification({
+        userId: review.userId,
+        actorId: userId,
+        type: NotificationType.REVIEW_LIKE,
+        entityId: review.id,
+        title: review.title,
+      });
     }
 
     const totalLikes = await this.prisma.reviewLike.count({
@@ -366,6 +379,16 @@ export class ReviewsService {
           },
         },
       },
+    });
+
+    // Notificar o autor da avaliação
+    await this.notificationsService.createNotification({
+      userId: review.userId,
+      actorId: userId,
+      type: NotificationType.REVIEW_COMMENT,
+      entityId: review.id,
+      title: review.title,
+      content,
     });
 
     return { message: 'Comentário adicionado com sucesso.', comment };

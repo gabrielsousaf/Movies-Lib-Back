@@ -9,10 +9,15 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { NotificationType } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async searchUsers(query: string, limit = 10) {
     if (!query || query.trim() === '') {
@@ -225,6 +230,13 @@ export class UsersService {
         followerId,
         followingId: targetUser.id,
       },
+    });
+
+    // Notificar o usuário seguido
+    await this.notificationsService.createNotification({
+      userId: targetUser.id,
+      actorId: followerId,
+      type: NotificationType.NEW_FOLLOWER,
     });
 
     return {

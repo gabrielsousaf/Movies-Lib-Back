@@ -14,6 +14,7 @@ import { EpisodesModule } from './episodes/episodes.module.js';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { FeedModule } from './feed/feed.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 
 @Module({
   imports: [
@@ -26,8 +27,8 @@ import { FeedModule } from './feed/feed.module.js';
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: 60000, // 60 segundos
-        limit: 100, // limite de 100 requisições por IP a cada 60s
+        ttl: 60000,
+        limit: 100,
       },
     ]),
     PrismaModule,
@@ -40,6 +41,7 @@ import { FeedModule } from './feed/feed.module.js';
     TmdbModule,
     EpisodesModule,
     FeedModule,
+    NotificationsModule,
   ],
   providers: [
     {
