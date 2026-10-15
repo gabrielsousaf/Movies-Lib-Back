@@ -9,15 +9,21 @@ async function bootstrap() {
 
   // Segurança com Helmet (adiciona cabeçalhos HTTP seguros)
   // Desabilitamos a CSP e CrossOriginEmbedderPolicy para não quebrar o Swagger UI
-  app.use(helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-  }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
 
-  // Habilitar CORS restrito ao frontend
+  // Habilitar CORS configurado via variável de ambiente FRONTEND_URL (suporta múltiplas URLs separadas por vírgula)
+  const allowedOrigins = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map((url) => url.trim())
+    : true;
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: allowedOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
@@ -57,11 +63,11 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3333;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   console.log(`\n======================================================`);
-  console.log(`🚀 Movies-Lib API rodando em: http://localhost:${port}`);
-  console.log(`📄 Swagger UI interativo em: http://localhost:${port}/api/docs`);
+  console.log(`🚀 Movies-Lib API rodando na porta: ${port}`);
+  console.log(`📄 Swagger UI interativo em: /api/docs`);
   console.log(`======================================================\n`);
 }
 
