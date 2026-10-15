@@ -373,4 +373,117 @@ export class UsersService {
       },
     };
   }
+
+  async getUserStats(username: string, currentUserId?: string) {
+    const targetUser = await this.prisma.user.findUnique({
+      where: { username: username.toLowerCase().trim() },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        isPublic: true,
+      },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundException(`Usuário '@${username}' não foi encontrado.`);
+    }
+
+    if (!targetUser.isPublic && targetUser.id !== currentUserId) {
+      throw new ForbiddenException('Este perfil é privado.');
+    }
+
+    const [
+      watchedMovies,
+      watchedSeries,
+      watchlistItems,
+      watchedEpisodes,
+      distinctShows,
+      reviews,
+      totalFavorites,
+      totalLists,
+      likesReceived,
+      commentsReceived,
+    ] = await Promise.all([
+      this.prisma.watchlistItem.count({
+        where: { userId: targetUser.id, status: 'WATCHED', mediaType: 'MOVIE' },
+      }),
+      this.prisma.watchlistItem.count({
+        where: { userId: targetUser.id, status: 'WATCHED', mediaType: 'TV' },
+      }),
+      this.prisma.watchlistItem.count({
+        where: { userId: targetUser.id, status: 'WATCHLIST' },
+      }),
+      this.prisma.watchedEpisode.count({
+        where: { userId: targetUser.id },
+      }),
+      this.prisma.watchedEpisode.findMany({
+        where: { userId: targetUser.id },
+        select: { showId: true },
+        distinct: ['showId'],
+      }),
+      this.prisma.review.findMany({
+        where: { userId: targetUser.id },
+        select: { rating: true, mediaType: true },
+      }),
+      this.prisma.favorite.count({
+        where: { userId: targetUser.id },
+      }),
+      this.prisma.customList.count({
+        where: { userId: targetUser.id },
+      }),
+      this.prisma.reviewLike.count({
+        where: { review: { userId: targetUser.id } },
+      }),
+      this.prisma.reviewComment.count({
+        where: { review: { userId: targetUser.id } },
+      }),
+    ]);
+
+    // Calcular tempo total
+    const totalMinutes = watchedMovies * 115 + watchedEpisodes * 45;
+    const totalHours = Math.round(totalMinutes / 60);
+    const totalDays = Number((totalHours / 24).toFixed(1));
+
+    // Distribuição de notas (1 a 5 estrelas)
+    const ratingDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    let ratingSum = 0;
+
+    for (const r of reviews) {
+      ratingSum += r.rating;
+      const rounded = Math.min(5, Math.max(1, Math.round(r.rating > 5 ? r.rating / 2 : r.rating)));
+      ratingDistribution[rounded] = (ratingDistribution[rounded] || 0) + 1;
+    }
+
+    const averageRating =
+      reviews.length > 0 ? Number((ratingSum / reviews.length).toFixed(1)) : 0;
+
+    return {
+      username: targetUser.username,
+      time: {
+        totalMinutes,
+        totalHours,
+        totalDays,
+      },
+      counts: {
+        watchedMovies,
+        watchedSeries,
+        watchedEpisodes,
+        showsFollowed: distinctShows.length,
+        watchlist: watchlistItems,
+        reviews: reviews.length,
+        favorites: totalFavorites,
+        customLists: totalLists,
+      },
+      ratings: {
+        average: averageRating,
+        total: reviews.length,
+        distribution: ratingDistribution,
+      },
+      engagement: {
+        likesReceived,
+        commentsReceived,
+      },
+    };
+  }
 }

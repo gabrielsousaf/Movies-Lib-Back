@@ -61,6 +61,19 @@ export class UsersController {
     return this.usersService.getPublicProfile(username, currentUserId);
   }
 
+  @Get(':username/stats')
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obter estatísticas de cinéfilo do usuário (tempo assistido, notas, distribuição)' })
+  @ApiResponse({ status: 200, description: 'Estatísticas completas de consumo e engajamento.' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+  async getUserStats(
+    @Param('username') username: string,
+    @CurrentUser('id') currentUserId?: string,
+  ) {
+    return this.usersService.getUserStats(username, currentUserId);
+  }
+
   @Get(':username/favorites')
   @UseGuards(OptionalJwtAuthGuard)
   @ApiBearerAuth()
