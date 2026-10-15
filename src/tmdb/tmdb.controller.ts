@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Param,
   ParseFloatPipe,
   ParseIntPipe,
@@ -286,5 +287,19 @@ export class TmdbController {
   @ApiOperation({ summary: 'Listar gêneros de séries em Português' })
   async getSeriesGenres() {
     return this.tmdbService.getSeriesGenres();
+  }
+
+  // ================= CACHE & PERFORMANCE =================
+
+  @Get('cache/stats')
+  @ApiOperation({ summary: 'Estatísticas de cache em memória das requisições do TMDB' })
+  async getCacheStats() {
+    return this.tmdbService.getCacheStats();
+  }
+
+  @Post('cache/clear')
+  @ApiOperation({ summary: 'Limpar manualmente o cache em memória do TMDB' })
+  async clearCache() {
+    return this.tmdbService.clearCache();
   }
 }

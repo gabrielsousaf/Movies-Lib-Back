@@ -8,14 +8,13 @@ import {
   Patch,
   Post,
   Query,
+  BadRequestException,
   UseGuards,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { randomUUID } from 'crypto';
+import { memoryStorage } from 'multer';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -26,6 +25,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -35,7 +35,10 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 @ApiTags('Usuários & Perfis Públicos')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly storageService: StorageService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Pesquisar usuários por nome ou username' })
@@ -170,21 +173,29 @@ export class UsersController {
   })
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads/avatars',
-        filename: (req, file, cb) => {
-          const uniqueSuffix = randomUUID();
-          const ext = extname(file.originalname);
-          cb(null, `${uniqueSuffix}${ext}`);
-        },
-      }),
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp|gif)$/i)) {
+          return cb(
+            new BadRequestException('Apenas imagens (jpg, jpeg, png, webp, gif) são permitidas!'),
+            false,
+          );
+        }
+        cb(null, true);
+      },
     }),
   )
   async uploadAvatar(
     @CurrentUser('id') userId: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const avatarUrl = `/uploads/avatars/${file.filename}`;
+    if (!file) {
+      throw new BadRequestException('Nenhum arquivo enviado.');
+    }
+    const avatarUrl = await this.storageService.uploadAvatar(file, userId);
     return this.usersService.updateMe(userId, { avatarUrl });
   }
 
