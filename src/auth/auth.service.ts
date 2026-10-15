@@ -128,7 +128,12 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const loginQuery = dto.login.toLowerCase().trim();
+    const rawIdentifier = dto.login || dto.email || '';
+    const loginQuery = rawIdentifier.toLowerCase().trim();
+
+    if (!loginQuery) {
+      throw new BadRequestException('Informe seu username ou e-mail.');
+    }
 
     const user = await this.prisma.user.findFirst({
       where: {
