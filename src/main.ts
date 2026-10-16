@@ -17,13 +17,9 @@ async function bootstrap() {
     }),
   );
 
-  // Habilitar CORS configurado via variável de ambiente FRONTEND_URL (suporta múltiplas URLs separadas por vírgula)
-  const allowedOrigins = process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(',').map((url) => url.trim())
-    : true;
-
+  // Habilitar CORS dinâmico para permitir acesso tanto da Vercel em produção quanto ambiente local
   app.enableCors({
-    origin: allowedOrigins,
+    origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
